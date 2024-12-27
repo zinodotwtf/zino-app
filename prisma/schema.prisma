@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  privyId   String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  earlyAccess Boolean @default(false)
+
+  wallets       Wallet[]
+  conversations Conversation[]
+
+  @@map("users")
+}
+
+model Wallet {
+  id                  String   @id @default(cuid())
+  ownerId             String   @unique
+  name                String
+  publicKey           String
+  encryptedPrivateKey String   @db.Text
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id])
+
+  @@map("wallets")
+}
+
+model Conversation {
+  id         String     @id @default(uuid())
+  userId     String
+  title      String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  visibility Visibility @default(PRIVATE)
+
+  user     User      @relation(fields: [userId], references: [id])
+  messages Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  role           String
+  content        Json
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@map("messages")
+}
+
+enum Visibility {
+  PRIVATE
+  PUBLIC
+}
